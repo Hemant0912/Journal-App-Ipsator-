@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -17,16 +18,26 @@ public class AdminController {
 
     @GetMapping("/all-users")
     public ResponseEntity<?> getAllUsers() {
-         List<UserEntity> all = userService.getAll();
-         if (all != null && !all.isEmpty()) {
-             return new ResponseEntity<>(all, HttpStatus.OK);
-         }
+        List<UserEntity> all = userService.getAll();
+        if (all != null && !all.isEmpty()) {
+            return new ResponseEntity<>(all, HttpStatus.OK);
+        }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @PostMapping("/create-admin")
-    public void createUser(@RequestBody UserEntity userEntity) {
-        userService.saveAdmin(userEntity);
-    }
+    public ResponseEntity<?> createAdmin(@RequestBody UserEntity newAdmin, Principal principal) {
+        try {
+            UserEntity authAdmin = null;
+            if (principal != null) {
+                authAdmin = userService.findByUserName(principal.getName());
+            }
 
+            userService.saveAdmin(newAdmin, authAdmin);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Admin created successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
 }
+

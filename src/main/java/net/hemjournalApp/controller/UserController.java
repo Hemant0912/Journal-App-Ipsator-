@@ -28,11 +28,10 @@ public class UserController {
         String userName = authentication.getName();
        UserEntity userInDb = userService.findByUserName(userName);
        if (userInDb !=null) {
-           userInDb.setUserName(userEntity.getUserName());
-           userInDb.setPassword(userEntity.getPassword());
-           userService.saveNewUser(userInDb);
+           userService.updateUser(userInDb, userEntity);
+           return new ResponseEntity<>(HttpStatus.NO_CONTENT);
        }
-       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping

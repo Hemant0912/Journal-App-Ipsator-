@@ -1,7 +1,10 @@
 package net.hemjournalApp.controller;
+import net.hemjournalApp.dto.UserResponse;
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,16 +23,19 @@ public class PublicController {
     public String healthCheck() {
         return "Ok";
     }
-    @PostMapping("create-user")
-    public void createUser(@Valid @RequestBody UserEntity userEntity) {
-        userService.saveNewUser(userEntity);
-    }
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage()));
-        return errors;
+
+    @PostMapping("/create-user")
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserEntity userEntity) {
+        UserEntity savedUser = userService.saveNewUser(userEntity);
+
+        // build response DTO
+        UserResponse response = new UserResponse(
+                savedUser.getId(),
+                savedUser.getUserName(),
+                savedUser.getPermissions()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
 
