@@ -74,15 +74,17 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public Optional<UserEntity> findById(ObjectId id) {
+    public Optional<UserEntity> findById(String id) {
         return userRepository.findById(id);
     }
 
-    public void deleteById(ObjectId id) {
+    public void deleteById(String id) {
         userRepository.deleteById(id);
     }
 
     public UserEntity findByUserName(String userName) {
-        return userRepository.findByUserName(userName);
+        return userRepository.findByUserName(userName)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userName));
     }
+
 }

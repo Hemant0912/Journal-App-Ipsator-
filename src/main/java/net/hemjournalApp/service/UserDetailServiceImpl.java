@@ -18,20 +18,14 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity userEntity = userRepository.findByUserName(username);
+        UserEntity user = userRepository.findByUserName(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        if (userEntity != null) {
-            return User.builder()
-                    .username(userEntity.getUserName())
-                    .password(userEntity.getPassword())
-                    .authorities(
-                            userEntity.getPermissions().stream()
-                                    .map(SimpleGrantedAuthority::new)
-                                    .collect(Collectors.toList())
-                    )
-                    .build();
-        }
-
-        throw new UsernameNotFoundException("User not found with username: " + username);
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getUserName())
+                .password(user.getPassword()) // encoded password
+                .authorities(user.getPermissions().toArray(new String[0]))
+                .build();
     }
 }
+

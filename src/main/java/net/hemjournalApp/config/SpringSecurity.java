@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,16 +34,20 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers(HttpMethod.POST, "/user").permitAll() // normal user signup
-                .antMatchers(HttpMethod.POST, "/admin/create-admin").permitAll() // allow first admin creation
+                .antMatchers("/public/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/admin/create-admin").permitAll()
                 .antMatchers("/journal/**").hasAnyAuthority(
                         "journal:read", "journal:create", "journal:update", "journal:delete")
-                .antMatchers("/admin/**").hasAuthority("admin:access") // protect other admin endpoints
+                .antMatchers("/admin/**").hasAuthority("admin:access")
                 .anyRequest().authenticated()
                 .and().httpBasic()
                 .and().csrf().disable();
     }
-
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManager() throws Exception {
+        return super.authenticationManager();
+    }
 
 }
 

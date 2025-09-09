@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,12 @@ public class UserEntity {
     @Size(min = 3, message = "Username must be at least 3 charcters long")
     @Indexed(unique = true)
     private String userName;
-
-    @NotBlank(message = "Password cannot be empty")
-    @Size(min = 3, message = "Password must be at least 3 charcters long")
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, max = 20, message = "Password must be 8–20 characters long")
+    @Pattern(
+            regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,20}$",
+            message = "Password must contain at least one uppercase, one lowercase, one digit, one special character, and no spaces"
+    )
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 

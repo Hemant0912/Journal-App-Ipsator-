@@ -27,8 +27,6 @@ public class PublicController {
     @PostMapping("/create-user")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserEntity userEntity) {
         UserEntity savedUser = userService.saveNewUser(userEntity);
-
-        // build response DTO
         UserResponse response = new UserResponse(
                 savedUser.getId(),
                 savedUser.getUserName(),
