@@ -25,7 +25,24 @@ public class PublicController {
     }
 
     @PostMapping("/create-user")
-    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserEntity userEntity) {
+    public ResponseEntity<?> createUser(@RequestBody UserEntity userEntity) {
+        String username = (userEntity.getUserName() != null) ? userEntity.getUserName().trim() : "";
+        String password = (userEntity.getPassword() != null) ? userEntity.getPassword().trim() : "";
+
+        Map<String, String> errorResponse = new HashMap<>();
+
+        if (username.isEmpty() && password.isEmpty()) {
+            errorResponse.put("error", "Username and Password cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } else if (username.isEmpty()) {
+            errorResponse.put("error", "Username cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } else if (password.isEmpty()) {
+            errorResponse.put("error", "Password cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+        // Now save the user only if everything is valid
         UserEntity savedUser = userService.saveNewUser(userEntity);
         UserResponse response = new UserResponse(
                 savedUser.getId(),
@@ -35,5 +52,6 @@ public class PublicController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
 }
 
