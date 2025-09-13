@@ -30,6 +30,7 @@ public class JournalEntryController {
         String userName = principal.getName();
         UserEntity userEntity = userService.findByUserName(userName);
 
+
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
 
         if (isAdmin) {
@@ -37,6 +38,7 @@ public class JournalEntryController {
         }
         return new ResponseEntity<>(userEntity.getJournalEntries(), HttpStatus.OK);
     }
+
     @PostMapping
     public ResponseEntity<?> createEntry(@RequestBody JournalEntry myEntry, Principal principal) {
         try {
@@ -51,18 +53,24 @@ public class JournalEntryController {
     @GetMapping("/id/{myId}")
     public ResponseEntity<?> getJournalEntryById(@PathVariable ObjectId myId, Principal principal) {
         String userName = principal.getName();
+
+        // unwrap Optional<UserEntity>
         UserEntity userEntity = userService.findByUserName(userName);
+
+
+
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
 
-        Optional<JournalEntry> journalEntry = journalEntryService.findById(myId);
+        JournalEntry journalEntry = journalEntryService.findById(myId);
 
-        if (journalEntry.isPresent()) {
-            if (isAdmin || userEntity.getJournalEntries().stream().anyMatch(x -> x.getId().equals(myId))) {
-                return new ResponseEntity<>(journalEntry.get(), HttpStatus.OK);
-            }
+        if (isAdmin || userEntity.getJournalEntries().stream().anyMatch(x -> x.getId().equals(myId))) {
+            return new ResponseEntity<>(journalEntry, HttpStatus.OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+
     }
+
 
     @DeleteMapping("/id/{myId}")
     public ResponseEntity<?> deleteJournalEntryById(@PathVariable String myId, Principal principal) {

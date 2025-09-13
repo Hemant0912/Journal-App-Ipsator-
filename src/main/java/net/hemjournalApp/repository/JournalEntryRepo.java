@@ -12,4 +12,3 @@ public interface JournalEntryRepo extends MongoRepository<JournalEntry,Object>{
 // controller will call service
 // service will call repository
 // C-S-R
-

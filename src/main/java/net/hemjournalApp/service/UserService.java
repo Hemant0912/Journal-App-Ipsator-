@@ -1,12 +1,12 @@
 package net.hemjournalApp.service;
+
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.repository.UserRepository;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,12 +22,12 @@ public class UserService {
 
     public UserEntity saveNewUser(UserEntity userEntity) {
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-        // Force default permissions for normal users
+        // Default permissions for normal users
         userEntity.setPermissions(Arrays.asList(
                 "journal:read", "journal:create", "journal:update", "journal:delete",
                 "user:read"
         ));
-       return userRepository.save(userEntity);
+        return userRepository.save(userEntity);
     }
 
     public void saveAdmin(UserEntity userEntity, UserEntity authAdmin) {
@@ -52,7 +52,6 @@ public class UserService {
         userRepository.save(userEntity);
     }
 
-
     public void saveUser(UserEntity userEntity) {
         userRepository.save(userEntity);
     }
@@ -74,8 +73,9 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public Optional<UserEntity> findById(String id) {
-        return userRepository.findById(id);
+    public UserEntity findById(String id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     public void deleteById(String id) {
@@ -84,7 +84,11 @@ public class UserService {
 
     public UserEntity findByUserName(String userName) {
         return userRepository.findByUserName(userName)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userName));
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
+    public boolean isUserNameExist(String username) {
+        return userRepository.findByUserName(username).isPresent();
+    }
+
 
 }

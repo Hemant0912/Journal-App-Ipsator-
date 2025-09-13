@@ -31,18 +31,38 @@ public class PublicController {
 
         Map<String, String> errorResponse = new HashMap<>();
 
+        // Check if both are empty
         if (username.isEmpty() && password.isEmpty()) {
             errorResponse.put("error", "Username and Password cannot be empty");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } else if (username.isEmpty()) {
-            errorResponse.put("error", "Username cannot be empty");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } else if (password.isEmpty()) {
-            errorResponse.put("error", "Password cannot be empty");
+        }
+
+        // Check username validations
+        if (username.isEmpty()) {
+            errorResponse.put("username", "Username cannot be empty");
+        } else if (username.length() < 3) {
+            errorResponse.put("username", "Username must be at least 3 characters long");
+        } else {
+            // Check if username already exists
+            boolean userExists = userService.isUserNameExist(username);
+            if (userExists) {
+                errorResponse.put("username", "Username already exists. Please choose a different username.");
+            }
+        }
+
+        // Check password validations
+        if (password.isEmpty()) {
+            errorResponse.put("password", "Password cannot be empty");
+        } else if (!password.matches("^(?=.*[0-9])(?=.*[@#$%^&+=!]).{5,}$")) {
+            errorResponse.put("password", "Password must be at least 5 characters, include at least one number and one special character");
+        }
+
+        // If there are any errors, return them
+        if (!errorResponse.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
-        // Now save the user only if everything is valid
+        // Save user if valid
         UserEntity savedUser = userService.saveNewUser(userEntity);
         UserResponse response = new UserResponse(
                 savedUser.getId(),
@@ -53,5 +73,5 @@ public class PublicController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-}
 
+}
