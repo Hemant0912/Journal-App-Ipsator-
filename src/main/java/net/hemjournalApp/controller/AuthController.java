@@ -1,15 +1,17 @@
 package net.hemjournalApp.controller;
-import net.hemjournalApp.dto.LoginRequest;
-import net.hemjournalApp.dto.LoginResponse;
-import net.hemjournalApp.entity.UserEntity;
+
+import net.hemjournalApp.dto.AuthRequest;
+import net.hemjournalApp.service.UserDetailServiceImpl;
+import net.hemjournalApp.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/public")
@@ -18,20 +20,26 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUserName(),
-                            loginRequest.getPassword()
-                    )
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUserName(), request.getPassword())
             );
 
-            return ResponseEntity.ok("Login successful for user: " + loginRequest.getUserName());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            String token = jwtUtil.generateToken(request.getUserName());
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            return ResponseEntity.ok(response);
+
+        }  catch (AuthenticationException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(401).body("Invalid credentials");
+            }
+
         }
-    }
+
 }
