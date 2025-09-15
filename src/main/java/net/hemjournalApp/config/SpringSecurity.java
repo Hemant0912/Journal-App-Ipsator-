@@ -51,9 +51,9 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS); // make JWT stateless
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // Add JWT filter before UsernamePasswordAuthenticationFilter
+        // Add JWT filter before UsernamePasswordAuthentication
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
     }
 

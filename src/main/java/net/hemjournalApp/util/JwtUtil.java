@@ -22,7 +22,7 @@ public class JwtUtil {
 
     // Generate JWT token with optional claims
     public String generateToken(String username) {
-        Map<String, Object> claims = new HashMap<>(); // can add roles/permissions later
+        Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)
@@ -37,7 +37,7 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // Extract any claim using a resolver function
+    // Extract  using  function
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -49,7 +49,7 @@ public class JwtUtil {
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    // ✅ Overloaded method: Validate token using String username
+    // Validate token using String username
     public boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (username.equals(extractedUsername) && !isTokenExpired(token));
@@ -60,7 +60,7 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
-    // Extract all claims
+    // Extract
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)

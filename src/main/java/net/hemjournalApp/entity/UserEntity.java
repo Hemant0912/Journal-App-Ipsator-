@@ -33,6 +33,7 @@ public class UserEntity {
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 20, message = "Password must be 8–20 characters long")
     @Pattern(
+            // using regex for validation
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,20}$",
             message = "Password must contain at least one uppercase, one lowercase, one digit, one special character, and no spaces"
     )

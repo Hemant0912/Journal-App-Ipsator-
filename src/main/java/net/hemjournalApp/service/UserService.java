@@ -63,7 +63,7 @@ public class UserService {
             existingUser.setPassword(passwordEncoder.encode(updatedData.getPassword()));
         }
 
-        // Preserve existing permissions
+
         existingUser.setPermissions(existingUser.getPermissions());
 
         userRepository.save(existingUser);
