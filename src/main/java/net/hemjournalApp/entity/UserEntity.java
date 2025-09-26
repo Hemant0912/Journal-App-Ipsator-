@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -30,6 +29,7 @@ public class UserEntity {
     @Size(min = 3, message = "Username must be at least 3 charcters long")
     @Indexed(unique = true)
     private String userName;
+
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 20, message = "Password must be 8–20 characters long")
     @Pattern(
@@ -37,8 +37,18 @@ public class UserEntity {
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,20}$",
             message = "Password must contain at least one uppercase, one lowercase, one digit, one special character, and no spaces"
     )
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+
+    @NotBlank(message = "Email is required")
+    @Pattern(
+            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",
+            message = "Invalid email format"
+    )
+    @Indexed(unique = true)
+    private String email;
 
     @DBRef
     @JsonManagedReference

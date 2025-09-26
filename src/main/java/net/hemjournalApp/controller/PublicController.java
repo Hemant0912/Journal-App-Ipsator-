@@ -43,7 +43,7 @@ public class PublicController {
         } else if (username.length() < 3) {
             errorResponse.put("username", "Username must be at least 3 characters long");
         } else {
-            // Check if username already exists
+            // Check if username already exist
             boolean userExists = userService.isUserNameExist(username);
             if (userExists) {
                 errorResponse.put("username", "Username already exists. Please choose a different username.");
@@ -57,19 +57,29 @@ public class PublicController {
             errorResponse.put("password", "Password must be at least 5 characters, include at least one number and one special character");
         }
 
-        // If there are any errors, return them
         if (!errorResponse.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
-        // Save user if valid
+        String email = (userEntity.getEmail() != null) ? userEntity.getEmail().trim() : "";
+
+        if (email.isEmpty()) {
+            errorResponse.put("email", "Email cannot be empty");
+        } else if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            errorResponse.put("email", "Invalid email format");
+        } else {
+            boolean emailExists = userService.isEmailExist(email);
+            if (emailExists) {
+                errorResponse.put("email", "Email already exists. Please use a different one.");
+            }
+        }
+
         UserEntity savedUser = userService.saveNewUser(userEntity);
         UserResponse response = new UserResponse(
                 savedUser.getId(),
                 savedUser.getUserName(),
                 savedUser.getPermissions()
         );
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

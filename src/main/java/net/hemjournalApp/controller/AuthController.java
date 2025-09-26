@@ -1,7 +1,5 @@
 package net.hemjournalApp.controller;
-
 import net.hemjournalApp.dto.AuthRequest;
-import net.hemjournalApp.service.UserDetailServiceImpl;
 import net.hemjournalApp.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +7,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +36,5 @@ public class AuthController {
                 e.printStackTrace();
                 return ResponseEntity.status(401).body("Invalid credentials");
             }
-
         }
-
 }

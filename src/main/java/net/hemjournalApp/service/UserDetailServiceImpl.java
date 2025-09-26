@@ -2,13 +2,11 @@ package net.hemjournalApp.service;
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import java.util.stream.Collectors;
+
 
 @Component
 public class UserDetailServiceImpl implements UserDetailsService {

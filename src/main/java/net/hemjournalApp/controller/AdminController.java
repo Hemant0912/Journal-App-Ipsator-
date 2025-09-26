@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.security.Principal;
 import java.util.List;
 
@@ -16,37 +15,29 @@ public class AdminController {
     @Autowired
     private UserService userService;
 
+    // List all users (any admin can view)
     @GetMapping("/all-users")
     public ResponseEntity<?> getAllUsers(Principal principal) {
-        String userName = principal.getName();
-        UserEntity currentUser = userService.findByUserName(userName);
+        UserEntity currentUser = userService.findByUserName(principal.getName());
         if (currentUser.getPermissions().contains("admin:access")) {
             List<UserEntity> all = userService.getAll();
-            if (all != null && !all.isEmpty()) {
-                return new ResponseEntity<>(all, HttpStatus.OK);
-            }
-            return new ResponseEntity<>("No users found", HttpStatus.NOT_FOUND);
+            return all.isEmpty()
+                    ? new ResponseEntity<>("No users found", HttpStatus.NOT_FOUND)
+                    : new ResponseEntity<>(all, HttpStatus.OK);
         }
-
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body("You are not authorized to view all users");
     }
 
-
+    // Create a new admin using super admin jwt
     @PostMapping("/create-admin")
     public ResponseEntity<?> createAdmin(@RequestBody UserEntity newAdmin, Principal principal) {
-        try {
-            UserEntity authAdmin = null;
-            if (principal != null) {
-                authAdmin = userService.findByUserName(principal.getName());
-            }
-
+        UserEntity authAdmin = userService.findByUserName(principal.getName());
+        if (authAdmin.getPermissions().contains("admin:access")) {
             userService.saveAdmin(newAdmin, authAdmin);
             return ResponseEntity.status(HttpStatus.CREATED).body("Admin created successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body("You are not authorized to create admin");
     }
 }
-

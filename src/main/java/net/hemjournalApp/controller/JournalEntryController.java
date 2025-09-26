@@ -1,19 +1,15 @@
 package net.hemjournalApp.controller;
-
 import net.hemjournalApp.entity.JournalEntry;
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.service.JournalEntryService;
 import net.hemjournalApp.service.UserService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.security.Principal;
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/journal")
@@ -26,18 +22,28 @@ public class JournalEntryController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<?> getAllJournalEntriesOfUser(Principal principal) {
+    public ResponseEntity<?> getAllJournalEntriesOfUser(
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "date") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String search) {
+
         String userName = principal.getName();
         UserEntity userEntity = userService.findByUserName(userName);
-
 
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
 
         if (isAdmin) {
-            return new ResponseEntity<>(journalEntryService.getAll(), HttpStatus.OK);
+            Page<JournalEntry> pageResult = journalEntryService.getAllForAdmin(page, size, sortBy, sortDir, search);
+            return new ResponseEntity<>(pageResult, HttpStatus.OK);
         }
-        return new ResponseEntity<>(userEntity.getJournalEntries(), HttpStatus.OK);
+
+        Page<JournalEntry> pageResult = journalEntryService.getAllForUser(userEntity.getId(), page, size, sortBy, sortDir, search);
+        return new ResponseEntity<>(pageResult, HttpStatus.OK);
     }
+
 
     @PostMapping
     public ResponseEntity<?> createEntry(@RequestBody JournalEntry myEntry, Principal principal) {
@@ -53,24 +59,16 @@ public class JournalEntryController {
     @GetMapping("/id/{myId}")
     public ResponseEntity<?> getJournalEntryById(@PathVariable ObjectId myId, Principal principal) {
         String userName = principal.getName();
-
-        // unwrap Optional<UserEntity>
         UserEntity userEntity = userService.findByUserName(userName);
-
-
-
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
-
         JournalEntry journalEntry = journalEntryService.findById(myId);
 
         if (isAdmin || userEntity.getJournalEntries().stream().anyMatch(x -> x.getId().equals(myId))) {
             return new ResponseEntity<>(journalEntry, HttpStatus.OK);
         }
-
         return new ResponseEntity<>(HttpStatus.FORBIDDEN);
 
     }
-
 
     @DeleteMapping("/id/{myId}")
     public ResponseEntity<?> deleteJournalEntryById(@PathVariable String myId, Principal principal) {

@@ -1,6 +1,6 @@
 package net.hemjournalApp.config;
-
 import net.hemjournalApp.filter.JwtFilter;
+import net.hemjournalApp.filter.RateLimitingFilter;
 import net.hemjournalApp.service.UserDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +27,9 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtFilter jwtFilter;
 
+    @Autowired
+    private RateLimitingFilter rateLimitingFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -40,21 +43,21 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable() // disable CSRF for JWT
+        http.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/public/**").permitAll()
-                .antMatchers("/admin/create-admin").permitAll()
+                .antMatchers("/public/**").permitAll() // public endpoints
+                .antMatchers("/admin/create-admin").hasAuthority("admin:access") //  admin can create new admin
                 .antMatchers("/journal/**").hasAnyAuthority(
                         "journal:read", "journal:create", "journal:update", "journal:delete")
                 .antMatchers("/admin/**").hasAuthority("admin:access")
-                .antMatchers("/user/**").authenticated() // allow any authenticated user for /user endpoints
+                .antMatchers("/user/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // Add JWT filter before UsernamePasswordAuthentication
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(rateLimitingFilter, JwtFilter.class);
     }
 
     @Override
@@ -62,5 +65,4 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
     public AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManager();
     }
-
 }

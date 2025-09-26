@@ -1,15 +1,12 @@
 package net.hemjournalApp.service;
-
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,21 +33,32 @@ public class UserService {
                 .filter(u -> u.getPermissions().contains("admin:access"))
                 .collect(Collectors.toList());
 
-        if (!admins.isEmpty()) {
-            if (authAdmin == null || !authAdmin.getPermissions().contains("admin:access")) {
-                throw new RuntimeException("Admin already exists. You are not authorized to create another one.");
-            }
+        // First admin creation
+        if (admins.isEmpty()) {
+            userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
+            // Give default admin permissions
+            userEntity.setPermissions(Arrays.asList(
+                    "journal:read", "journal:create", "journal:update", "journal:delete",
+                    "user:read", "admin:access"
+            ));
+            userRepository.save(userEntity);
+            return;
         }
 
-        // Encode password and assign admin permissions
+        if (authAdmin == null || !authAdmin.getPermissions().contains("admin:access")) {
+            throw new RuntimeException("You are not authorized to create a new admin.");
+        }
+
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
         userEntity.setPermissions(Arrays.asList(
                 "journal:read", "journal:create", "journal:update", "journal:delete",
                 "user:read", "admin:access"
         ));
-
         userRepository.save(userEntity);
     }
+
+
+
 
     public void saveUser(UserEntity userEntity) {
         userRepository.save(userEntity);
@@ -89,6 +97,10 @@ public class UserService {
     public boolean isUserNameExist(String username) {
         return userRepository.findByUserName(username).isPresent();
     }
+    public boolean isEmailExist(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
 
 
 }
