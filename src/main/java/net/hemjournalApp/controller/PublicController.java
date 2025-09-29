@@ -61,12 +61,13 @@ public class PublicController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
+        // Check email validations
         String email = (userEntity.getEmail() != null) ? userEntity.getEmail().trim() : "";
 
         if (email.isEmpty()) {
             errorResponse.put("email", "Email cannot be empty");
-        } else if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            errorResponse.put("email", "Invalid email format");
+        } else if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            errorResponse.put("email", "Invalid email. Please provide a valid email address");
         } else {
             boolean emailExists = userService.isEmailExist(email);
             if (emailExists) {
@@ -74,6 +75,11 @@ public class PublicController {
             }
         }
 
+        if (!errorResponse.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+
+// Save new user only if no errors
         UserEntity savedUser = userService.saveNewUser(userEntity);
         UserResponse response = new UserResponse(
                 savedUser.getId(),
@@ -81,6 +87,7 @@ public class PublicController {
                 savedUser.getPermissions()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
     }
 
 

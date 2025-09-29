@@ -1,5 +1,4 @@
 package net.hemjournalApp.filter;
-
 import net.hemjournalApp.service.UserDetailServiceImpl;
 import net.hemjournalApp.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +58,7 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            System.out.println("⚠️ Exception in JwtFilter: " + e.getMessage());
+            System.out.println(" Exception in JwtFilter: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Unauthorized: " + e.getMessage());
         }
