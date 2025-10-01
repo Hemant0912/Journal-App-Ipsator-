@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,6 +17,52 @@ public class UserService {
     private UserRepository userRepository;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public boolean isSuperAdmin(UserEntity user) {
+        // find the first admin ever created
+        return userRepository.findAll().stream()
+                .filter(u -> u.getPermissions().contains("admin:access"))
+                .findFirst()
+                .map(firstAdmin -> firstAdmin.getId().equals(user.getId()))
+                .orElse(false);
+    }
+
+
+    // Super Admin creates a new admin
+    public void createAdminBySuperAdmin(UserEntity superAdmin, UserEntity newAdmin) {
+        if (!isSuperAdmin(superAdmin)) {
+            throw new RuntimeException("Only Super Admin can create new admins");
+        }
+
+        newAdmin.setPassword(passwordEncoder.encode(newAdmin.getPassword()));
+        newAdmin.setPermissions(Arrays.asList(
+                "journal:read", "journal:create", "journal:update", "journal:delete",
+                "user:read", "admin:access"
+        ));
+
+        userRepository.save(newAdmin);
+    }
+    // Find user by email
+    public Optional<UserEntity> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    // Find user by mobile
+    public Optional<UserEntity> findByMobile(String mobile) {
+        return userRepository.findByMobile(mobile);
+    }
+
+    // helper used by AuthController
+    public Optional<UserEntity> findByIdentifier(String identifier) {
+        if (identifier == null) return Optional.empty();
+        Optional<UserEntity> byEmail = userRepository.findByEmail(identifier);
+        if (byEmail.isPresent()) return byEmail;
+        return userRepository.findByMobile(identifier);
+    }
+
+    public boolean isMobileExist(String mobile) {
+        return userRepository.existsByMobile(mobile);
+    }
 
     public UserEntity saveNewUser(UserEntity userEntity) {
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
@@ -94,6 +141,30 @@ public class UserService {
         return userRepository.findByUserName(userName)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+    // Update password
+    public boolean updatePassword(UserEntity user, String oldPassword, String newPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return false; // old password incorrect
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return true;
+    }
+
+    // Update username
+    public void updateUsername(UserEntity user, String newUsername, String currentPassword) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        if (isUserNameExist(newUsername)) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        user.setUserName(newUsername);
+        userRepository.save(user);
+    }
+
     public boolean isUserNameExist(String username) {
         return userRepository.findByUserName(username).isPresent();
     }
@@ -101,6 +172,8 @@ public class UserService {
         return userRepository.findByEmail(email).isPresent();
     }
 
-
-
 }
+
+
+
+

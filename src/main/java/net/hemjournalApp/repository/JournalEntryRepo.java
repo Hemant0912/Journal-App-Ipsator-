@@ -14,6 +14,9 @@ public interface JournalEntryRepo extends MongoRepository<JournalEntry,String>{
     // Native Mongo query
     @Query("{ '$or': [ { 'title': { $regex: ?0, $options: 'i' } }, { 'content': { $regex: ?0, $options: 'i' } } ] }")
     Page<JournalEntry> searchByTitleOrContent(String regex, Pageable pageable);
+
+    boolean existsByTitleAndContent(String title, String content);
+    boolean existsByTitle(String title);
 }
 // controller will call service
 // service will call repository

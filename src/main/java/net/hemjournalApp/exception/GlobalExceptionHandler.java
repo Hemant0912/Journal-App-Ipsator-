@@ -1,5 +1,7 @@
 package net.hemjournalApp.exception;
-
+import com.mongodb.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,4 +22,15 @@ public class GlobalExceptionHandler {
         );
         return errors;
     }
+
+
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    @ResponseBody
+    public ResponseEntity<?> handleDuplicateKey(DuplicateKeyException ex) {
+        Map<String, String> err = new HashMap<>();
+        err.put("error", "Duplicate key error: " + ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+    }
+
 }

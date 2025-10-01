@@ -1,4 +1,5 @@
 package net.hemjournalApp.controller;
+import net.hemjournalApp.dto.UserRequestDTO;
 import net.hemjournalApp.dto.UserResponse;
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.service.UserService;
@@ -25,70 +26,31 @@ public class PublicController {
     }
 
     @PostMapping("/create-user")
-    public ResponseEntity<?> createUser(@RequestBody UserEntity userEntity) {
-        String username = (userEntity.getUserName() != null) ? userEntity.getUserName().trim() : "";
-        String password = (userEntity.getPassword() != null) ? userEntity.getPassword().trim() : "";
-
-        Map<String, String> errorResponse = new HashMap<>();
-
-        // Check if both are empty
-        if (username.isEmpty() && password.isEmpty()) {
-            errorResponse.put("error", "Username and Password cannot be empty");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserRequestDTO userRequest) {
+        // Check uniqueness
+        if (userService.isUserNameExist(userRequest.getUserName())) {
+            return ResponseEntity.badRequest().body(Map.of("username", "Username already exists"));
+        }
+        if (userService.isEmailExist(userRequest.getEmail())) {
+            return ResponseEntity.badRequest().body(Map.of("email", "Email already exists"));
+        }
+        if (userService.isMobileExist(userRequest.getMobile())) {
+            return ResponseEntity.badRequest().body(Map.of("mobile", "Mobile already exists"));
         }
 
-        // Check username validations
-        if (username.isEmpty()) {
-            errorResponse.put("username", "Username cannot be empty");
-        } else if (username.length() < 3) {
-            errorResponse.put("username", "Username must be at least 3 characters long");
-        } else {
-            // Check if username already exist
-            boolean userExists = userService.isUserNameExist(username);
-            if (userExists) {
-                errorResponse.put("username", "Username already exists. Please choose a different username.");
-            }
-        }
+        // Convert DTO to entity
+        UserEntity user = new UserEntity();
+        user.setUserName(userRequest.getUserName());
+        user.setPassword(userRequest.getPassword());
+        user.setEmail(userRequest.getEmail());
+        user.setMobile(userRequest.getMobile());
 
-        // Check password validations
-        if (password.isEmpty()) {
-            errorResponse.put("password", "Password cannot be empty");
-        } else if (!password.matches("^(?=.*[0-9])(?=.*[@#$%^&+=!]).{5,}$")) {
-            errorResponse.put("password", "Password must be at least 5 characters, include at least one number and one special character");
-        }
+        UserEntity savedUser = userService.saveNewUser(user);
 
-        if (!errorResponse.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-
-        // Check email validations
-        String email = (userEntity.getEmail() != null) ? userEntity.getEmail().trim() : "";
-
-        if (email.isEmpty()) {
-            errorResponse.put("email", "Email cannot be empty");
-        } else if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
-            errorResponse.put("email", "Invalid email. Please provide a valid email address");
-        } else {
-            boolean emailExists = userService.isEmailExist(email);
-            if (emailExists) {
-                errorResponse.put("email", "Email already exists. Please use a different one.");
-            }
-        }
-
-        if (!errorResponse.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-
-// Save new user only if no errors
-        UserEntity savedUser = userService.saveNewUser(userEntity);
-        UserResponse response = new UserResponse(
-                savedUser.getId(),
-                savedUser.getUserName(),
-                savedUser.getPermissions()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new UserResponse(savedUser.getId(), savedUser.getUserName(), savedUser.getPermissions()));
     }
+
 
 
 }

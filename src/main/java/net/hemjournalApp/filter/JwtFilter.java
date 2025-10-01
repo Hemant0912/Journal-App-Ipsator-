@@ -27,18 +27,26 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        // token in x-auth
+        String authHeader = request.getHeader("Authorization");
+        String token = null;
+        String username = null;
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+            username = jwtUtil.extractUsername(token);
+            System.out.println("Extracted username from Authorization: " + username);
+        } else {
+            // Check X-auth header
+            authHeader = request.getHeader("X-auth");
+            if (authHeader != null && !authHeader.isBlank()) {
+                token = authHeader.trim();
+                username = jwtUtil.extractUsername(token);
+                System.out.println("Extracted username from X-auth: " + username);
+            }
+        }
 
         try {
-            String username = null;
-            String token = null;
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7).trim();
-                username = jwtUtil.extractUsername(token);
-                System.out.println("Extracted username: " + username);
-            }
-
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailService.loadUserByUsername(username);
 
@@ -58,10 +66,11 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            System.out.println(" Exception in JwtFilter: " + e.getMessage());
+            System.out.println("Exception in JwtFilter: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Unauthorized: " + e.getMessage());
         }
     }
+
 }
 

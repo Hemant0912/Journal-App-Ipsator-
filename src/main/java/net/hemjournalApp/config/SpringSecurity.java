@@ -1,6 +1,8 @@
 package net.hemjournalApp.config;
+
 import net.hemjournalApp.filter.JwtFilter;
 import net.hemjournalApp.filter.RateLimitingFilter;
+import net.hemjournalApp.repository.UserRepository;
 import net.hemjournalApp.service.UserDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +18,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.stream.Collectors;
+
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -29,6 +33,9 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -45,16 +52,17 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/public/**").permitAll() // public endpoints
-                .antMatchers("/admin/create-admin").hasAuthority("admin:access") //  admin can create new admin
+                .antMatchers("/public/**").permitAll()
+                .antMatchers("/error").permitAll()
+                .antMatchers("/admin/create-admin").permitAll()  // controller handles JWT logic
+                .antMatchers("/auth/login").permitAll()
                 .antMatchers("/journal/**").hasAnyAuthority(
                         "journal:read", "journal:create", "journal:update", "journal:delete")
                 .antMatchers("/admin/**").hasAuthority("admin:access")
                 .antMatchers("/user/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(rateLimitingFilter, JwtFilter.class);
@@ -66,3 +74,5 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
         return super.authenticationManager();
     }
 }
+
+

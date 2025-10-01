@@ -1,4 +1,6 @@
 package net.hemjournalApp.controller;
+
+import net.hemjournalApp.dto.PageResponse;
 import net.hemjournalApp.entity.JournalEntry;
 import net.hemjournalApp.entity.UserEntity;
 import net.hemjournalApp.service.JournalEntryService;
@@ -9,7 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.security.Principal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/journal")
@@ -21,6 +25,7 @@ public class JournalEntryController {
     @Autowired
     private UserService userService;
 
+    // get all journal entry
     @GetMapping
     public ResponseEntity<?> getAllJournalEntriesOfUser(
             Principal principal,
@@ -35,16 +40,17 @@ public class JournalEntryController {
 
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
 
+        PageResponse<JournalEntry> response;
         if (isAdmin) {
-            Page<JournalEntry> pageResult = journalEntryService.getAllForAdmin(page, size, sortBy, sortDir, search);
-            return new ResponseEntity<>(pageResult, HttpStatus.OK);
+            response = journalEntryService.getAllForAdmin(page, size, sortBy, sortDir, search);
+        } else {
+            response = journalEntryService.getAllForUser(userEntity.getId(), page, size, sortBy, sortDir, search);
         }
 
-        Page<JournalEntry> pageResult = journalEntryService.getAllForUser(userEntity.getId(), page, size, sortBy, sortDir, search);
-        return new ResponseEntity<>(pageResult, HttpStatus.OK);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-
+    // create journal entry
     @PostMapping
     public ResponseEntity<?> createEntry(@RequestBody JournalEntry myEntry, Principal principal) {
         try {
@@ -52,24 +58,26 @@ public class JournalEntryController {
             journalEntryService.saveEntry(myEntry, userName);
             return new ResponseEntity<>(myEntry, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
+    // get journal entry
     @GetMapping("/id/{myId}")
-    public ResponseEntity<?> getJournalEntryById(@PathVariable ObjectId myId, Principal principal) {
+    public ResponseEntity<?> getJournalEntryById(@PathVariable String myId, Principal principal) {
         String userName = principal.getName();
         UserEntity userEntity = userService.findByUserName(userName);
         boolean isAdmin = userEntity.getPermissions().contains("admin:access");
-        JournalEntry journalEntry = journalEntryService.findById(myId);
+        JournalEntry journalEntry = journalEntryService.findById(new ObjectId(myId));
 
         if (isAdmin || userEntity.getJournalEntries().stream().anyMatch(x -> x.getId().equals(myId))) {
             return new ResponseEntity<>(journalEntry, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-
     }
 
+    // delete entry
     @DeleteMapping("/id/{myId}")
     public ResponseEntity<?> deleteJournalEntryById(@PathVariable String myId, Principal principal) {
         String userName = principal.getName();
@@ -80,6 +88,7 @@ public class JournalEntryController {
         return new ResponseEntity<>("You are not allowed to delete this entry", HttpStatus.FORBIDDEN);
     }
 
+    // update journal entry content
     @PutMapping("/id/{myId}")
     public ResponseEntity<?> updateJournalById(
             @PathVariable("myId") String id,
@@ -88,13 +97,29 @@ public class JournalEntryController {
 
         String userName = principal.getName();
         try {
-            JournalEntry updated = journalEntryService.updateEntry(new ObjectId(id), newEntry, userName);
+            JournalEntry updated = journalEntryService.updateEntryByStringId(id, newEntry, userName);
             return new ResponseEntity<>(updated, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>("Invalid journal ID format", HttpStatus.BAD_REQUEST);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN);
         }
     }
 
+    @PatchMapping("/id/{myId}/update-title")
+    public ResponseEntity<?> updateTitle(
+            @PathVariable("myId") String id,
+            @RequestBody Map<String, String> payload,
+            Principal principal) {
+
+        String userName = principal.getName();
+        String newTitle = payload.get("title");
+        if (newTitle == null || newTitle.isBlank()) {
+            return ResponseEntity.badRequest().body("Title cannot be empty");
+        }
+        try {
+            JournalEntry updated = journalEntryService.updateTitle(new ObjectId(id), newTitle, userName);
+            return new ResponseEntity<>(updated, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
 }

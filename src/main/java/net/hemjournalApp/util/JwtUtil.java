@@ -17,10 +17,14 @@ public class JwtUtil {
     // 30 days expiration
     private final long EXPIRATION_TIME = 1000L * 60 * 60 * 24 * 30;
 
-    // constructor injected secret from application.properties
+
     public JwtUtil(@Value("${app.jwt.secret}") String secret) {
-        // create HMAC key from provided secret bytes
         this.key = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    // Instance method to extract username
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 
     public String generateToken(String username) {
@@ -32,10 +36,6 @@ public class JwtUtil {
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key)
                 .compact();
-    }
-
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -65,3 +65,4 @@ public class JwtUtil {
         return new HashMap<>(claims);
     }
 }
+
