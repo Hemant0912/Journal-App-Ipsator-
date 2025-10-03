@@ -1,4 +1,6 @@
 package net.hemjournalApp.exception;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,24 +15,38 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // Validation Errors
     @ResponseBody
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
-        return errors;
+    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        // Start with empty map (instead of full DTO map)
+        Map<String, Object> response = new HashMap<>();
+
+        // Only put invalid fields with their error message
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            response.put(error.getField(), error.getDefaultMessage());
+        });
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-
-
+    // Duplicate key errors (email/mobile already exists)
     @ExceptionHandler(DuplicateKeyException.class)
     @ResponseBody
     public ResponseEntity<?> handleDuplicateKey(DuplicateKeyException ex) {
-        Map<String, String> err = new HashMap<>();
-        err.put("error", "Duplicate key error: " + ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
-    }
+        Map<String, String> response = new HashMap<>();
 
+        String message = ex.getMessage();
+        if (message.contains("email")) {
+            response.put("email", "Invalid email - already exists");
+        } else if (message.contains("mobile")) {
+            response.put("mobile", "Invalid mobile - already exists");
+        } else {
+            response.put("error", "Duplicate key error");
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }

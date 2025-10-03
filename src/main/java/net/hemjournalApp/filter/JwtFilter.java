@@ -27,22 +27,20 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // token in x-auth
-        String authHeader = request.getHeader("Authorization");
         String token = null;
         String username = null;
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7).trim();
-            username = jwtUtil.extractUsername(token);
-            System.out.println("Extracted username from Authorization: " + username);
-        } else {
-            // Check X-auth header
-            authHeader = request.getHeader("X-auth");
-            if (authHeader != null && !authHeader.isBlank()) {
-                token = authHeader.trim();
+        // ✅ Only check X-auth header
+        String authHeader = request.getHeader("X-auth");
+        if (authHeader != null && !authHeader.isBlank()) {
+            token = authHeader.trim();
+            try {
                 username = jwtUtil.extractUsername(token);
                 System.out.println("Extracted username from X-auth: " + username);
+            } catch (Exception e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Invalid or expired token");
+                return;
             }
         }
 
@@ -71,6 +69,6 @@ public class JwtFilter extends OncePerRequestFilter {
             response.getWriter().write("Unauthorized: " + e.getMessage());
         }
     }
-
 }
+
 

@@ -38,11 +38,9 @@ public class AuthController {
             UserEntity user;
 
             if (request.getEmail() != null && !request.getEmail().isBlank()) {
-                // login with email
                 user = userService.findByEmail(request.getEmail())
                         .orElseThrow(() -> new RuntimeException("Invalid credentials"));
             } else {
-                // login with mobile
                 user = userService.findByMobile(request.getMobile())
                         .orElseThrow(() -> new RuntimeException("Invalid credentials"));
             }
@@ -51,10 +49,9 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(user.getUserName(), request.getPassword())
             );
 
-            // Generate JWT
+            // ✅ Generate JWT
             String token = jwtUtil.generateToken(user.getUserName());
 
-            // Response
             LoginResponse response = new LoginResponse(
                     user.getId(),
                     user.getUserName(),
@@ -63,6 +60,7 @@ public class AuthController {
                     user.getPermissions()
             );
 
+            // ✅ Return token only in X-auth header
             return ResponseEntity.ok()
                     .header("X-auth", token)
                     .body(response);
@@ -71,5 +69,5 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
         }
     }
-
 }
+
